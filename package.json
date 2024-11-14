@@ -1,0 +1,18 @@
+{
+  "name": "liqboot",
+  "version": "1.0.0",
+  "main": "liquidator.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node liquidator.js"
+  },
+  "author": "anshika",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@dfinity/agent": "^2.1.3",
+    "cors": "^2.8.5",
+    "express": "^4.21.1"
+  }
+}
