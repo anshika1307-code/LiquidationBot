@@ -370,7 +370,7 @@ const POLLING_INTERVAL = 10 * 60 * 1000; // 10 minutes
 async function fetchExchangeRate(baseAsset) {
   try {
     const result = await dfinance_backend.get_exchange_rates(baseAsset, [], 100000000);
-    console.log(result);
+    // console.log(result);
     if (result && result.Ok) {
       const [price, timestamp] = result.Ok;
       console.log(`Exchange rate fetched successfully for ${baseAsset}:`, price, timestamp);
@@ -409,11 +409,11 @@ async function updateCacheAndTriggerActions(assets) {
 async function fetchUsersByAsset(asset) {
   try {
     const allUsers = await dfinance_backend.get_all_users();
-    console.log("all users", allUsers);
+    // console.log("all users", allUsers);
     const usersWithAsset = allUsers.filter(([principal, userData]) => {
       if (userData.reserves && Array.isArray(userData.reserves)) {
         const reserves = userData.reserves || [];
-        console.log("usereserve", reserves);
+        // console.log("usereserve", reserves);
 
         // Adjust this line to handle the nested array structure
         const hasAsset = reserves.some(reserve => reserve[0][0] === asset);
@@ -425,22 +425,23 @@ async function fetchUsersByAsset(asset) {
     });
 
 
-    console.log(`Users using ${asset} as collateral or debt:`, usersWithAsset);
     usersWithAsset.forEach(async ([principal, userData]) => {
       // console.log("Principal:", principal);
       // console.log("UserData:", JSON.stringify(userData, null, 2));
       //loop all reserves -> call get normalizedincome and getnormalizeddebt multiply it with assetprice from cache 
       //add it up to totalcollateral and totaldebt 
       //pass it to h.f formula
+      console.log(`Users using ${asset} as collateral or debt:`, principal);
+
       const reserves = userData.reserves || [];
       let totalCollateral = 0;
       let totalDebt = 0;
-
+      //max debt asset, max collateral asset
       for (const reserve of reserves) {
         const [reserveAsset] = reserve[0];
-        console.log('reservename', [reserveAsset]);
+        // console.log('reservename', [reserveAsset]);
         const userreserveData = reserve[0][1];
-        console.log('user reserve data', userreserveData);
+        // console.log('user reserve data', userreserveData);
         const normalizedIncome = await dfinance_backend.user_normalized_supply(reserve[0][1]);
         const normalizedDebt = await dfinance_backend.user_normalized_debt(reserve[0][1]);
 
@@ -450,6 +451,8 @@ async function fetchUsersByAsset(asset) {
         console.log(`Asset price for ${reserveAsset}:`, assetPrice);
 
         // Calculate collateral and debt contributions
+        totalSupply  += BigInt(normalizedIncome.Ok) * BigInt(assetPrice);
+        //if userreserve.iscollateral { totalCollateral}
         totalCollateral += BigInt(normalizedIncome.Ok) * BigInt(assetPrice);
 totalDebt += BigInt(normalizedDebt.Ok) * BigInt(assetPrice);
       }
@@ -457,12 +460,13 @@ totalDebt += BigInt(normalizedDebt.Ok) * BigInt(assetPrice);
       console.log(`User ${principal} Total Collateral: ${totalCollateral}, Total Debt: ${totalDebt}`);
 
       // Calculate health factor (h.f)
-      const healthFactor = totalDebt === 0 ? Infinity : totalCollateral / totalDebt;
+      const healthFactor = totalDebt === 0 ? Infinity : totalCollateral / totalDebt; //change this according to formula
       console.log(`User ${principal} Health Factor (h.f): ${healthFactor}`);
 
       if (healthFactor < 1) {
         console.log(`User ${principal} is at risk of liquidation!`);
         // Add logic to handle liquidation if necessary
+        //call liq_call function from backend
       }
 
 
@@ -496,7 +500,13 @@ const assets = ["ICP", "ckBTC", "ckETH", "ckUSDC", "ckUSDT"];
 startPriceMonitoring(assets);
 
 
-
+function calculateHealthFactor(position) {
+  const { total_collateral_value, total_borrowed_value, liquidation_threshold } = position;
+  if (total_borrowed_value === 0) {
+    return Number.MAX_SAFE_INTEGER; // Max health factor when there is no debt
+  }
+  return (total_collateral_value * liquidation_threshold) / total_borrowed_value;
+}
 
 //getuserstate
 //exchange rate outside the getUserAccountData, cal it using
