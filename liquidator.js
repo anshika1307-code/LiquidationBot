@@ -363,10 +363,10 @@ function calculateHealthFactor(position) {
 
 import { dfinance_backend } from "./index.js";
 
-const cache = {}; // To store asset prices and track changes
+const cache = {};
 const POLLING_INTERVAL = 10 * 60 * 1000; // 10 minutes
 
-// Fetch exchange rate for an asset
+
 async function fetchExchangeRate(baseAsset) {
   try {
     const result = await dfinance_backend.get_exchange_rates(baseAsset, [], 100000000);
@@ -375,7 +375,7 @@ async function fetchExchangeRate(baseAsset) {
       const [price, timestamp] = result.Ok;
       console.log(`Exchange rate fetched successfully for ${baseAsset}:`, price, timestamp);
 
-      // Return the price
+     
       return price;
     } else {
       console.error(`Error fetching price for ${baseAsset}:`, result.Err || "Unknown error");
@@ -388,7 +388,7 @@ async function fetchExchangeRate(baseAsset) {
 
 }
 
-// Update cache and trigger actions for changed prices
+
 async function updateCacheAndTriggerActions(assets) {
   for (const asset of assets) {
     const newPrice = await fetchExchangeRate(asset);
@@ -398,14 +398,13 @@ async function updateCacheAndTriggerActions(assets) {
         console.log(`Price change detected for ${asset}: Old: ${cache[asset]}, New: ${newPrice}`);
         cache[asset] = newPrice;
 
-        // Fetch users using this asset as collateral or debt
+        
         await fetchUsersByAsset(asset);
       }
     }
   }
 }
 
-// Fetch users by asset
 async function fetchUsersByAsset(asset) {
   try {
     const allUsers = await dfinance_backend.get_all_users();
@@ -415,7 +414,7 @@ async function fetchUsersByAsset(asset) {
         const reserves = userData.reserves || [];
         // console.log("usereserve", reserves);
 
-        // Adjust this line to handle the nested array structure
+      
         const hasAsset = reserves.some(reserve => reserve[0][0] === asset);
         console.log(`User ${principal} has asset ${asset}:`, hasAsset);
 
@@ -450,7 +449,7 @@ async function fetchUsersByAsset(asset) {
         console.log(`Normalized Debt for ${reserveAsset}:`, normalizedDebt.Ok);
         console.log(`Asset price for ${reserveAsset}:`, assetPrice);
 
-        // Calculate collateral and debt contributions
+        
         totalSupply  += BigInt(normalizedIncome.Ok) * BigInt(assetPrice);
         //if userreserve.iscollateral { totalCollateral}
         totalCollateral += BigInt(normalizedIncome.Ok) * BigInt(assetPrice);
@@ -459,13 +458,13 @@ totalDebt += BigInt(normalizedDebt.Ok) * BigInt(assetPrice);
 
       console.log(`User ${principal} Total Collateral: ${totalCollateral}, Total Debt: ${totalDebt}`);
 
-      // Calculate health factor (h.f)
+      
       const healthFactor = totalDebt === 0 ? Infinity : totalCollateral / totalDebt; //change this according to formula
       console.log(`User ${principal} Health Factor (h.f): ${healthFactor}`);
 
       if (healthFactor < 1) {
         console.log(`User ${principal} is at risk of liquidation!`);
-        // Add logic to handle liquidation if necessary
+        
         //call liq_call function from backend
       }
 
@@ -483,17 +482,15 @@ totalDebt += BigInt(normalizedDebt.Ok) * BigInt(assetPrice);
 async function startPriceMonitoring(assets) {
   console.log("Starting price monitoring...");
 
-  // Initial fetch to populate the cache
+
   await updateCacheAndTriggerActions(assets);
 
-  // Set interval to monitor price changes
   setInterval(async () => {
     console.log("Checking for price updates...");
     await updateCacheAndTriggerActions(assets);
   }, POLLING_INTERVAL);
 }
 
-// List of assets to monitor
 const assets = ["ICP", "ckBTC", "ckETH", "ckUSDC", "ckUSDT"];
 
 // Start the monitoring process
@@ -503,7 +500,7 @@ startPriceMonitoring(assets);
 function calculateHealthFactor(position) {
   const { total_collateral_value, total_borrowed_value, liquidation_threshold } = position;
   if (total_borrowed_value === 0) {
-    return Number.MAX_SAFE_INTEGER; // Max health factor when there is no debt
+    return Number.MAX_SAFE_INTEGER; 
   }
   return (total_collateral_value * liquidation_threshold) / total_borrowed_value;
 }
