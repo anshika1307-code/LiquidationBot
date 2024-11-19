@@ -15,10 +15,12 @@ export const idlFactory = ({ IDL }) => {
     'is_collateral' : IDL.Bool,
     'asset_price_when_borrowed' : IDL.Nat,
     'liquidity_index' : IDL.Nat,
+    'faucet_limit' : IDL.Nat,
     'variable_borrow_index' : IDL.Nat,
     'reserve' : IDL.Text,
     'asset_supply' : IDL.Nat,
     'state' : UserState,
+    'faucet_usage' : IDL.Nat,
     'borrow_rate' : IDL.Nat,
     'is_using_as_collateral_or_borrow' : IDL.Bool,
     'is_borrowed' : IDL.Bool,
@@ -63,26 +65,33 @@ export const idlFactory = ({ IDL }) => {
     'id' : IDL.Nat16,
     'asset_name' : IDL.Opt(IDL.Text),
     'userlist' : IDL.Opt(IDL.Vec(IDL.Tuple(IDL.Text, IDL.Bool))),
+    'asset_borrow' : IDL.Nat,
     'can_be_collateral' : IDL.Opt(IDL.Bool),
     'debt_token_canister' : IDL.Opt(IDL.Text),
     'last_update_timestamp' : IDL.Nat64,
     'liquidity_index' : IDL.Nat,
     'd_token_canister' : IDL.Opt(IDL.Text),
+    'asset_supply' : IDL.Nat,
     'current_liquidity_rate' : IDL.Nat,
     'borrow_rate' : IDL.Nat,
-    'supply_rate_apr' : IDL.Opt(IDL.Nat),
     'configuration' : ReserveConfiguration,
+    'accure_to_platform' : IDL.Nat,
     'debt_index' : IDL.Nat,
     'total_borrowed' : IDL.Nat,
     'total_supply' : IDL.Nat,
   });
   const Result_6 = IDL.Variant({ 'Ok' : ReserveData, 'Err' : IDL.Text });
   const Result_7 = IDL.Variant({ 'Ok' : UserData, 'Err' : IDL.Text });
+  const Result_8 = IDL.Variant({ 'Ok' : IDL.Nat, 'Err' : IDL.Text });
+  const Result_9 = IDL.Variant({
+    'Ok' : IDL.Tuple(IDL.Nat, IDL.Nat),
+    'Err' : IDL.Text,
+  });
   return IDL.Service({
     'borrow' : IDL.Func([IDL.Text, IDL.Nat64], [Result], []),
     'check_user' : IDL.Func([IDL.Text], [Result_1], []),
     'create_multiple_canisters' : IDL.Func([], [IDL.Vec(IDL.Principal)], []),
-    'faucet' : IDL.Func([IDL.Text, IDL.Nat64], [Result_2], []),
+    'faucet' : IDL.Func([IDL.Text, IDL.Nat], [Result_2], []),
     'get_all_assets' : IDL.Func([], [IDL.Vec(IDL.Text)], ['query']),
     'get_all_users' : IDL.Func(
         [],
@@ -107,11 +116,22 @@ export const idlFactory = ({ IDL }) => {
     'login' : IDL.Func([], [Result], []),
     'queary_reserve_price' : IDL.Func([], [IDL.Vec(PriceCache)], ['query']),
     'repay' : IDL.Func([IDL.Text, IDL.Nat, IDL.Opt(IDL.Text)], [Result], []),
+    'reset_faucet_usage' : IDL.Func([IDL.Text], [Result], []),
     'supply' : IDL.Func([IDL.Text, IDL.Nat64, IDL.Bool], [Result], []),
     'toggle_collateral' : IDL.Func([IDL.Text, IDL.Nat, IDL.Nat], [], []),
-    'transfer' : IDL.Func([IDL.Nat, IDL.Text], [Result_2], []),
-    'update_balance' : IDL.Func([IDL.Principal, IDL.Principal], [IDL.Nat], []),
+    'update_balance' : IDL.Func(
+        [IDL.Principal, IDL.Principal, IDL.Nat],
+        [Result_2],
+        [],
+      ),
     'update_reserves_price' : IDL.Func([], [], []),
+    'user_normalized_debt' : IDL.Func([UserReserveData], [Result_8], ['query']),
+    'user_normalized_supply' : IDL.Func(
+        [UserReserveData],
+        [Result_8],
+        ['query'],
+      ),
+    'user_position' : IDL.Func([IDL.Text], [Result_9], ['query']),
     'withdraw' : IDL.Func(
         [IDL.Text, IDL.Nat, IDL.Opt(IDL.Text), IDL.Bool],
         [Result],
